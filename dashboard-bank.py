@@ -134,6 +134,8 @@ h1, h2, h3, h4 { font-family: 'Plus Jakarta Sans', sans-serif !important; letter
 /* ---------- INSIGHT ---------- */
 .insight { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: .4rem; }
 .ins-box { border-radius: 14px; padding: .9rem 1.05rem; font-size: .9rem; line-height: 1.55; color: #2b2a27; }
+.ins-box ul { margin: 0; padding-left: 1.1rem; }
+.ins-box li { margin-bottom: .25rem; }
 .ins-box b.t { display: block; font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; margin-bottom: .3rem; }
 .ins-find { background: #f4f8fe; border-left: 4px solid #2a78d6; }
 .ins-find b.t { color: #1c5cab; }
@@ -268,29 +270,15 @@ def show(fig):
     st.plotly_chart(fig, use_container_width=True, config=PLOT_CONFIG)
 
 
-LECT = {
-    3: ("b-l3", "Lecture 03 · Amounts"),
-    4: ("b-l4", "Lecture 04 · Distributions"),
-    5: ("b-l5", "Lecture 05 · Proportions"),
-}
+def card_head(title):
+    st.markdown(f'<div class="card-head"><div class="card-title">{title}</div></div>', unsafe_allow_html=True)
 
 
-def card_head(lectures, technique, title, sub=""):
-    badges = "".join(f'<span class="badge {LECT[l][0]}">{LECT[l][1]}</span>' for l in lectures)
-    badges += f'<span class="badge b-ch">{technique}</span>'
+def insight(points, act):
+    items = "".join(f"<li>{p}</li>" for p in points)
     st.markdown(
-        f'<div class="card-head"><div class="badges">{badges}</div>'
-        f'<div class="card-title">{title}</div>'
-        + (f'<div class="card-sub">{sub}</div>' if sub else "")
-        + "</div>",
-        unsafe_allow_html=True,
-    )
-
-
-def insight(find, act):
-    st.markdown(
-        f'<div class="insight"><div class="ins-box ins-find"><b class="t">Temuan</b>{find}</div>'
-        f'<div class="ins-box ins-act"><b class="t">Implikasi bisnis</b>{act}</div></div>',
+        f'<div class="insight"><div class="ins-box ins-find"><b class="t">Temuan</b><ul>{items}</ul></div>'
+        f'<div class="ins-box ins-act"><b class="t">Business insight</b>{act}</div></div>',
         unsafe_allow_html=True,
     )
 
@@ -306,11 +294,8 @@ def stat(value, label, warn=False):
     )
 
 
-def chapter(num, title, text):
-    st.markdown(
-        f'<div class="chapter"><div class="num">{num}</div><h2>{title}</h2><p>{text}</p></div>',
-        unsafe_allow_html=True,
-    )
+def chapter(title):
+    st.markdown(f'<div class="chapter"><h2>{title}</h2></div>', unsafe_allow_html=True)
 
 
 def slog(x):
@@ -363,12 +348,7 @@ tabs = st.tabs(
 # TAB 0 — RINGKASAN
 # =============================================================================
 with tabs[0]:
-    chapter(
-        "Storyline",
-        "Strategi Bisnis",
-        "Setiap bab menjawab satu keputusan bisnis. Setiap chart diberi label materi (Lecture 03/04/05) "
-        "dan teknik visualisasinya.",
-    )
+    chapter("Strategi Bisnis")
     pri = tier.loc["Prioritas"]
     st.markdown(
         f"""
@@ -414,20 +394,11 @@ with tabs[0]:
 # TAB 1 — CARA MENELEPON
 # =============================================================================
 with tabs[1]:
-    chapter(
-        "Bab 1",
-        "Cara menelepon: lebih sedikit, lebih tepat",
-        "Sebelum bicara siapa yang ditelepon, lihat dulu bagaimana bank menelepon: kapan, berapa kali, dan seberapa lama.",
-    )
+    chapter("Cara menelepon: lebih sedikit, lebih tepat")
 
     # ---------- 1A. Timeline: stacked bars (amounts) + 100% stacked bars (proportions) ----------
     with st.container(border=True):
-        card_head(
-            [3, 5], "Stacked bars + 100% stacked bars",
-            f"Volume panggilan turun {nf(n08)} → {nf(n10)} per tahun, tapi conversion naik {pf(r08)} → {pf(r10)}",
-            "Atas: jumlah nasabah yang ditelepon per bulan (amounts). Bawah: proporsi subscribe di bulan yang sama "
-            "(proportions). Dua panel berbagi sumbu x, bukan dua sumbu y.",
-        )
+        card_head("Volume Panggilan vs Subscription Rate per Bulan (2008–2010)")
         tl = (
             df.groupby(["year", "m_idx"])["subscribe"].agg(n="size", yes="sum").reset_index()
             .sort_values(["year", "m_idx"]).reset_index(drop=True)
@@ -475,21 +446,17 @@ with tabs[1]:
         show(fig)
         may08 = tl[(tl.year == 2008) & (tl.m_idx == 4)].iloc[0]
         insight(
-            f"Mei 2008 saja ada <b>{nf(may08['n'])}</b> panggilan dengan conversion <b>{pf(may08['rate'])}</b>. "
-            f"Sepanjang 2008 conversion hanya {pf(r08)}. Mulai pertengahan 2009, volume dipangkas drastis dan "
-            f"conversion melonjak ke kisaran 40–55%. Ini pola yang sama di semua bulan 2010, jadi bukan efek musiman.",
-            "Volume bukan sumber hasil. Daripada menambah agen atau jam telepon, bank lebih baik "
-            "<b>memilih nasabah</b> yang ditelepon. Bab 2 dan 3 menjelaskan siapa nasabah tersebut.",
+            [
+                f"Mei 2008: <b>{nf(may08['n'])}</b> panggilan, conversion hanya <b>{pf(may08['rate'])}</b>.",
+                f"Volume per tahun turun {nf(n08)} → {nf(n10)}, conversion naik {pf(r08)} → {pf(r10)}.",
+                "Sejak pertengahan 2009 conversion stabil di 40–55% tiap bulan, bukan efek musiman.",
+            ],
+            "Hasil datang dari <b>memilih nasabah yang tepat</b>, bukan dari menambah volume telepon.",
         )
 
     # ---------- 1B. ECDF ----------
     with st.container(border=True):
-        card_head(
-            [4], "ECDF · sumbu log",
-            f"{pf(yes_le3, 0)} subscriber sudah didapat sebelum kontak ke-4",
-            "Empirical cumulative distribution function jumlah kontak per nasabah. ECDF tidak butuh pilihan bin/bandwidth, "
-            "dan sumbu log dipakai karena distribusinya sangat miring ke kanan (maks 63 kontak).",
-        )
+        card_head("Distribusi Kumulatif Jumlah Kontak: Subscribe vs Tidak Subscribe")
         c1, c2 = st.columns([2.3, 1])
         with c1:
             fig = go.Figure()
@@ -521,22 +488,16 @@ with tabs[1]:
             stat(pf(rate_4plus), f"conversion nasabah yang dikontak ≥ 4 kali, di bawah rata-rata {pf(BASE)}", warn=True)
             stat(pf(1 - yes_le3), "subscriber yang “hilang” jika kontak dibatasi maksimal 3 kali")
         insight(
-            "Kurva subscriber naik jauh lebih cepat daripada non-subscriber: mayoritas yang tertarik langsung bilang "
-            "“yes” di 1–3 kontak pertama. Setelah itu kurva mendatar; menelepon lagi nasabah yang sama "
-            "jarang mengubah keputusan.",
-            f"Terapkan <b>batas maksimal 3 kontak</b> per nasabah per kampanye. Bank menghemat sekitar "
-            f"<b>{pf(calls_extra / calls_total, 0)}</b> panggilan dengan risiko kehilangan {pf(1 - yes_le3, 0)} "
-            "subscriber, dan kapasitas itu bisa dialihkan ke nasabah baru yang lebih potensial.",
+            [
+                f"<b>{pf(yes_le3, 0)}</b> subscriber sudah didapat dalam 1–3 kontak pertama.",
+                f"Kontak ke-4 dst. = <b>{pf(calls_extra / calls_total, 0)}</b> total panggilan, conversion hanya {pf(rate_4plus)}.",
+            ],
+            f"Batasi maksimal <b>3 kontak</b> per nasabah: hemat ±{pf(calls_extra / calls_total, 0)} panggilan, hanya kehilangan {pf(1 - yes_le3, 0)} subscriber.",
         )
 
     # ---------- 1C. Split violin + sina ----------
     with st.container(border=True):
-        card_head(
-            [4], "Split violin + sina plot · sumbu log",
-            "Panggilan yang berhasil 2–5× lebih lama, terutama pada kontak ke-4+",
-            "Setiap violin dibelah dua: kiri = tidak subscribe, kanan = subscribe. Titik-titik (sina plot, sampel acak) "
-            "disebar selebar kepadatan datanya sehingga jumlah observasi tetap terlihat.",
-        )
+        card_head("Durasi Panggilan per Urutan Kontak: Subscribe vs Tidak Subscribe")
         dd = df[df["duration"] > 0].copy()
         dd["ld"] = np.log10(dd["duration"])
         rng = np.random.default_rng(7)
@@ -590,13 +551,11 @@ with tabs[1]:
         dbin = pd.cut(df["duration"], [-1, 120, 600, 1e6], labels=["<2", "2-10", ">10"])
         drate = df.groupby(dbin, observed=True)["subscribe"].mean()
         insight(
-            f"Median panggilan sukses jauh lebih panjang daripada yang gagal. Panggilan di bawah 2 menit hanya "
-            f"menghasilkan <b>{pf(drate['<2'])}</b> subscriber, sedangkan panggilan di atas 10 menit "
-            f"<b>{pf(drate['>10'])}</b>. Di kontak ke-4+, panggilan gagal justru makin pendek ({med.loc['Kontak ke-4+', 'no']:.0f} dtk): "
-            "nasabah sudah tidak mau mendengar.",
-            "Durasi tidak bisa dipakai untuk memilih nasabah (baru diketahui setelah telepon), tapi bisa jadi "
-            "<b>KPI kualitas agen</b>. Jika dalam 2 menit percakapan tidak berkembang, tandai nasabah dan jangan "
-            "dihubungi ulang berkali-kali.",
+            [
+                f"Panggilan < 2 menit: conversion <b>{pf(drate['<2'])}</b>; panggilan > 10 menit: <b>{pf(drate['>10'])}</b>.",
+                f"Di kontak ke-4+, panggilan gagal makin pendek (median {med.loc['Kontak ke-4+', 'no']:.0f} dtk).",
+            ],
+            "Jadikan durasi <b>KPI kualitas agen</b>: percakapan < 2 menit = berhenti, jangan telepon ulang.",
         )
 
 
@@ -604,20 +563,11 @@ with tabs[1]:
 # TAB 2 — SIAPA TARGETNYA
 # =============================================================================
 with tabs[2]:
-    chapter(
-        "Bab 2",
-        "Siapa targetnya: telepon kita salah alamat",
-        "Bandingkan ke mana volume telepon pergi dengan di mana conversion sebenarnya terjadi.",
-    )
+    chapter("Siapa targetnya: telepon kita salah alamat")
 
     # ---------- 2A. Treemap ----------
     with st.container(border=True):
-        card_head(
-            [5], "Treemap · nested proportions",
-            "Kotak terbesar (volume telepon) bukan kotak terbiru (conversion tertinggi)",
-            "Luas kotak = jumlah nasabah yang ditelepon. Warna = subscription rate: merah di bawah rata-rata, "
-            "abu-abu ≈ rata-rata, biru di atas rata-rata. Klik kotak pekerjaan untuk zoom.",
-        )
+        card_head("Komposisi Nasabah per Pekerjaan & Subscription Rate")
         lvl_name = st.radio(
             "Pecah tiap pekerjaan berdasarkan:", ["Kelompok usia", "Status pinjaman", "Pendidikan"],
             horizontal=True, key="tm_lvl",
@@ -654,23 +604,17 @@ with tabs[2]:
         show(fig)
         share_big = df["job"].isin(["blue-collar", "management", "technician"]).mean()
         insight(
-            f"Kerah biru, manajemen, dan teknisi menyerap <b>{pf(share_big, 0)}</b> volume telepon. Kerah biru "
-            f"conversion-nya cuma {pf(df.loc[df.job == 'blue-collar', 'subscribe'].mean())}. Sebaliknya pelajar dan pensiunan, "
-            f"yang conversion-nya {pf(df.loc[df.job == 'student', 'subscribe'].mean(), 0)} dan "
-            f"{pf(df.loc[df.job == 'retired', 'subscribe'].mean(), 0)}, hanya kotak kecil di pojok. "
-            "Ubah pecahan ke <i>Status pinjaman</i>: di setiap pekerjaan, kotak “Tanpa pinjaman” selalu lebih biru.",
-            "Alokasi telepon saat ini mengikuti <b>jumlah nasabah</b>, bukan <b>peluang</b>. Geser kuota panggilan "
-            "ke kotak biru meskipun kecil; satu panggilan ke pensiunan bernilai sekitar 3 panggilan ke kerah biru.",
+            [
+                f"Kerah biru, manajemen & teknisi = <b>{pf(share_big, 0)}</b> volume telepon; kerah biru conversion hanya {pf(df.loc[df.job == 'blue-collar', 'subscribe'].mean())}.",
+                f"Pelajar ({pf(df.loc[df.job == 'student', 'subscribe'].mean(), 0)}) dan pensiunan ({pf(df.loc[df.job == 'retired', 'subscribe'].mean(), 0)}) conversion tertinggi, tapi volumenya kecil.",
+                "Di setiap pekerjaan, nasabah tanpa pinjaman conversion-nya lebih tinggi.",
+            ],
+            "Alokasikan kuota telepon berdasarkan <b>peluang</b>, bukan jumlah nasabah.",
         )
 
     # ---------- 2B. Age: parts of total + stacked density ----------
     with st.container(border=True):
-        card_head(
-            [5], "Parts of the total + stacked density",
-            "Kurva usia berbentuk U: nasabah muda dan lansia paling mau, tapi paling jarang ditelepon",
-            "Atas: seluruh nasabah per usia (abu-abu) dengan subscriber sebagai bagiannya (biru). "
-            "Bawah: stacked density, yaitu proporsi subscribe di setiap usia (KDE), sehingga kelompok kecil tetap terbaca.",
-        )
+        card_head("Distribusi Usia Nasabah & Proporsi Subscribe per Usia")
         age_ct = df.groupby(["age", "y"]).size().unstack(fill_value=0).reindex(range(18, 89), fill_value=0)
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, row_heights=[0.55, 0.45], vertical_spacing=0.08)
         fig.add_bar(x=age_ct.index, y=age_ct.sum(axis=1), marker_color="#dddcd5", name="Semua nasabah ditelepon",
@@ -709,11 +653,11 @@ with tabs[2]:
         fig.update_yaxes(title_text="Proporsi", row=2, col=1, range=[0, 100], ticksuffix="%", showgrid=False)
         show(fig)
         insight(
-            f"Usia 31–50 adalah {pf(mid.mean(), 0)} dari seluruh panggilan, tapi proporsi subscribe-nya justru di bawah rata-rata. "
-            f"Setelah usia 60, proporsi subscribe melompat menjadi {pf(df.loc[old, 'subscribe'].mean(), 0)}, hampir 4× rata-rata. "
-            "Panel atas menjelaskan kenapa ini sering terlewat: kelompok lansia sangat kecil sehingga “tenggelam” di total.",
-            "Nasabah ≤25 tahun (mahasiswa, pekerja baru) dan >60 tahun (pensiunan yang mencari instrumen aman) "
-            "perlu <b>jalur kampanye khusus</b> dengan pesan berbeda: tabungan pertama vs. keamanan dana pensiun.",
+            [
+                f"Usia 31–50 = <b>{pf(mid.mean(), 0)}</b> panggilan, tapi conversion di bawah rata-rata.",
+                f"Usia >60: conversion <b>{pf(df.loc[old, 'subscribe'].mean(), 0)}</b>; usia ≤25: <b>{pf(df.loc[young, 'subscribe'].mean(), 0)}</b>.",
+            ],
+            "Buat <b>kampanye khusus</b> untuk usia ≤25 (tabungan pertama) dan >60 (dana pensiun aman).",
         )
 
     # ---------- 2C. Dumbbell dot plot ----------
@@ -721,12 +665,7 @@ with tabs[2]:
     _r = _g["Tanpa pinjaman"] / _g["Punya pinjaman"]
     DUMB_TITLE = (f"Di setiap pekerjaan, nasabah tanpa pinjaman {_r.min():.1f}–{_r.max():.1f}× lebih mungkin subscribe").replace(".", ",")
     with st.container(border=True):
-        card_head(
-            [3], "Dot plot (Cleveland / dumbbell)",
-            DUMB_TITLE,
-            "Titik biru = nasabah tanpa KPR & tanpa pinjaman pribadi. Titik oranye = punya salah satu atau keduanya. "
-            "Dot plot dipakai karena perbandingannya ada pada selisih, bukan panjang dari nol.",
-        )
+        card_head("Subscription Rate per Pekerjaan: Tanpa Pinjaman vs Punya Pinjaman")
         g = df.groupby(["job_id", "loan_status"])["subscribe"].agg(["mean", "size"]).unstack()
         g = g.sort_values(("mean", "Tanpa pinjaman"))
         fig = go.Figure()
@@ -753,12 +692,12 @@ with tabs[2]:
         fig.update_yaxes(showgrid=True, tickfont=dict(size=12, color=INK))
         show(fig)
         insight(
-            f"Polanya konsisten di 12 pekerjaan: bebas pinjaman selalu di kanan. Pelajar tanpa pinjaman mencapai "
-            f"<b>{pf(g.loc['Pelajar/Mhs', ('mean', 'Tanpa pinjaman')])}</b> dan pensiunan "
-            f"<b>{pf(g.loc['Pensiunan', ('mean', 'Tanpa pinjaman')])}</b>, sedangkan hampir semua nasabah yang punya pinjaman "
-            "berada di bawah rata-rata, apa pun pekerjaannya.",
-            "Status pinjaman adalah <b>filter cepat</b> yang datanya sudah dimiliki bank. Nasabah dengan cicilan "
-            "lebih cocok ditawari produk lain (refinancing, asuransi kredit), bukan deposito.",
+            [
+                f"Di semua {len(g)} pekerjaan, nasabah tanpa pinjaman conversion-nya lebih tinggi.",
+                f"Tertinggi: pelajar tanpa pinjaman <b>{pf(g.loc['Pelajar/Mhs', ('mean', 'Tanpa pinjaman')])}</b>, pensiunan <b>{pf(g.loc['Pensiunan', ('mean', 'Tanpa pinjaman')])}</b>.",
+                "Nasabah yang punya pinjaman hampir semuanya di bawah rata-rata.",
+            ],
+            "Pakai status pinjaman sebagai <b>filter awal</b>; nasabah bercicilan ditawari produk lain.",
         )
 
 
@@ -766,20 +705,11 @@ with tabs[2]:
 # TAB 3 — SINYAL TERKUAT
 # =============================================================================
 with tabs[3]:
-    chapter(
-        "Bab 3",
-        "Sinyal terkuat: riwayat dan kondisi finansial",
-        "Faktor mana yang paling kuat membedakan nasabah yang akan bilang “yes”, dan bagaimana faktor-faktor itu saling berinteraksi?",
-    )
+    chapter("Sinyal terkuat: riwayat dan kondisi finansial")
 
     # ---------- 3A. Parallel sets ----------
     with st.container(border=True):
-        card_head(
-            [5], "Parallel sets",
-            f"Nasabah yang pernah sukses di kampanye sebelumnya: {pf(df.loc[df.poutcome == 'success', 'subscribe'].mean(), 0)} subscribe lagi",
-            "Setiap pita adalah sekelompok nasabah yang mengalir dari hasil kampanye lalu → saluran kontak → KPR → keputusan. "
-            "Warna pita mengikuti keputusan akhir. Arahkan kursor ke pita untuk melihat jumlahnya; kategori bisa digeser.",
-        )
+        card_head("Alur Nasabah: Hasil Kampanye Lalu → Saluran Kontak → KPR → Keputusan")
         pc = df.assign(
             p=df["poutcome"].map(POUT_ID), c=df["contact"].map(CONTACT_ID),
             h=np.where(df["housing"] == "yes", "Punya KPR", "Tanpa KPR"),
@@ -807,22 +737,17 @@ with tabs[3]:
         ps = df.groupby("poutcome")["subscribe"].mean()
         unk = df.loc[df.contact == "unknown", "subscribe"].mean()
         insight(
-            f"Pita biru tebal hampir selalu berasal dari <b>“Sukses”</b> di kampanye lalu ({pf(ps['success'], 0)} conversion), "
-            f"padahal kelompok ini hanya {pf((df.poutcome == 'success').mean())} dari data. {pf((df.poutcome == 'unknown').mean(), 0)} nasabah "
-            f"belum pernah dihubungi dan conversion-nya {pf(ps['unknown'])}. Saluran “tidak tercatat” hampir tidak menghasilkan "
-            f"({pf(unk)}), sedangkan alur Seluler → Tanpa KPR adalah jalur biru utama di luar warm lead.",
-            "Bangun <b>database warm lead</b>: setiap nasabah yang pernah subscribe otomatis masuk daftar prioritas kampanye berikutnya. "
-            "Wajibkan pencatatan nomor seluler; kontak tanpa saluran yang jelas adalah biaya tanpa hasil.",
+            [
+                f"Riwayat sukses kampanye lalu: conversion <b>{pf(ps['success'], 0)}</b>, padahal hanya {pf((df.poutcome == 'success').mean())} nasabah.",
+                f"{pf((df.poutcome == 'unknown').mean(), 0)} nasabah belum pernah dihubungi, conversion {pf(ps['unknown'])}.",
+                f"Saluran kontak tidak tercatat: conversion hanya {pf(unk)}.",
+            ],
+            "Prioritaskan <b>warm lead</b> (riwayat sukses) dan wajibkan pencatatan nomor seluler.",
         )
 
     # ---------- 3B. Heatmap ----------
     with st.container(border=True):
-        card_head(
-            [3], "Heatmap · skala diverging",
-            "Saldo tinggi menaikkan peluang di setiap kelompok usia; lansia bersaldo tinggi tembus 40%+",
-            "Baris = kelompok usia, kolom = kuintil saldo rata-rata tahunan (masing-masing ±20% nasabah). "
-            "Warna diverging berpusat di rata-rata, sehingga merah = di bawah rata-rata dan biru = di atas.",
-        )
+        card_head("Subscription Rate per Kelompok Usia × Kuintil Saldo")
         hm_rate = df.pivot_table(index="age_band", columns="bal_q", values="subscribe", aggfunc="mean", observed=False) * 100
         hm_n = df.pivot_table(index="age_band", columns="bal_q", values="subscribe", aggfunc="size", observed=False)
         hm_rate = hm_rate.iloc[::-1]
@@ -842,21 +767,17 @@ with tabs[3]:
         fig.update_layout(margin=dict(t=60))
         show(fig)
         insight(
-            f"Bergerak ke kanan (saldo naik), warna makin biru di semua baris. Kombinasi terbaik ada di usia 60+ "
-            f"dengan saldo teratas (<b>{hm_rate.loc['60+'].iloc[-1]:.0f}%</b>) dan usia 18–25 bersaldo tinggi "
-            f"({hm_rate.loc['18–25'].iloc[-1]:.0f}%). Usia 31–50 tetap pucat bahkan di saldo tertinggi.",
-            "Gunakan saldo rata-rata sebagai <b>skor kedua</b> setelah usia. Pada usia produktif, saldo tinggi saja "
-            "tidak cukup; mereka butuh pemicu lain (riwayat sukses, bebas pinjaman).",
+            [
+                "Semakin tinggi saldo, semakin tinggi conversion di semua kelompok usia.",
+                f"Tertinggi: usia 60+ saldo teratas <b>{hm_rate.loc['60+'].iloc[-1]:.0f}%</b>, usia 18–25 saldo teratas {hm_rate.loc['18–25'].iloc[-1]:.0f}%.",
+                "Usia 31–50 tetap rendah meski saldonya tinggi.",
+            ],
+            "Pakai saldo sebagai <b>skor kedua</b> setelah usia.",
         )
 
     # ---------- 3C. Ridgeline ----------
     with st.container(border=True):
-        card_head(
-            [4], "Ridgeline plot · dua distribusi per baris · signed-log",
-            "Subscriber punya saldo lebih tinggi di hampir setiap pekerjaan",
-            "Setiap punggungan = distribusi saldo satu pekerjaan (KDE). Abu-abu = tidak subscribe, biru = subscribe; "
-            "garis tegak kecil = median. Sumbu x memakai signed-log karena saldo sangat miring dan ada yang negatif.",
-        )
+        card_head("Distribusi Saldo per Pekerjaan: Subscribe vs Tidak Subscribe")
         x_lo, x_hi = -2000, 40000
         grid = np.linspace(slog(x_lo), slog(x_hi), 320)
         order = JOB_ORDER[::-1]  # tertinggi di atas
@@ -896,12 +817,12 @@ with tabs[3]:
         mp = mdf.pivot(index="job", columns="y", values="m")
         higher = (mp["yes"] > mp["no"]).sum()
         insight(
-            f"Median saldo subscriber lebih tinggi di <b>{higher} dari {len(mp)}</b> pekerjaan, misalnya pensiunan "
-            f"€{nf(mp.loc['Pensiunan', 'no'])} → €{nf(mp.loc['Pensiunan', 'yes'])}. Punggungan abu-abu juga punya "
-            "“ekor kiri” yang lebih tebal di sekitar €0 dan saldo negatif: nasabah tanpa dana menganggur hampir tidak mungkin "
-            "membuka deposito. Pengecualian: pelajar, yang median saldonya sama.",
-            "Jadikan saldo ≤ €0 sebagai <b>filter eksklusi</b> sebelum kampanye. Untuk pelajar, saldo bukan penentu; "
-            "pendekatannya lebih ke kebiasaan menabung.",
+            [
+                f"Median saldo subscriber lebih tinggi di <b>{higher} dari {len(mp)}</b> pekerjaan.",
+                "Non-subscriber menumpuk di saldo ≈ €0 dan negatif.",
+                "Pengecualian: pelajar, median saldonya sama.",
+            ],
+            "Kecualikan nasabah bersaldo <b>≤ €0</b> dari kampanye deposito.",
         )
 
 
@@ -909,11 +830,7 @@ with tabs[3]:
 # TAB 4 — REKOMENDASI
 # =============================================================================
 with tabs[4]:
-    chapter(
-        "Rekomendasi",
-        "Strategi segmentasi: telepon yang tepat, dengan batas yang jelas",
-        "Temuan Bab 1–3 digabung menjadi aturan sederhana yang bisa langsung diterapkan tanpa model machine learning.",
-    )
+    chapter("Strategi segmentasi: telepon yang tepat, dengan batas yang jelas")
     cols = st.columns(3)
     desc = {
         "Prioritas": "Pernah sukses di kampanye lalu, ATAU usia ≤25 / >60, ATAU pelajar/pensiunan.",
@@ -934,10 +851,7 @@ with tabs[4]:
 
     with st.container(border=True):
         top2 = tier.loc[["Prioritas", "Potensial"]].sum()
-        card_head([5], "100% stacked bars",
-                  f"Segmen Prioritas + Potensial: {pf(top2['share_n'], 0)} nasabah menghasilkan {pf(top2['share_yes'], 0)} subscriber",
-                  "Batang atas = komposisi panggilan, batang bawah = komposisi subscriber. Segmen yang “melebar” "
-                  "di batang bawah adalah segmen yang lebih produktif daripada porsinya.")
+        card_head("Komposisi Panggilan vs Subscriber per Segmen")
         fig = go.Figure()
         rows = ["Porsi nasabah<br>yang ditelepon", "Porsi subscriber<br>yang didapat"]
         for t in ["Prioritas", "Potensial", "Umum"]:
@@ -962,9 +876,7 @@ with tabs[4]:
         show(fig)
 
     with st.container(border=True):
-        card_head([], "Simulasi what-if", "Berapa yang dihemat jika aturan diterapkan?",
-                  "Asumsi konservatif: subscriber yang baru didapat setelah batas kontak dianggap hilang, "
-                  "dan segmen yang tidak dipilih tidak ditelepon sama sekali.")
+        card_head("Simulasi Batas Kontak & Segmen: Panggilan vs Subscriber")
         s1, s2 = st.columns([1, 1.4])
         with s1:
             cap = st.slider("Batas maksimal kontak per nasabah", 1, 10, 3)
